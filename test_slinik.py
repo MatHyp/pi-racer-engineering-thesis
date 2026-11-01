@@ -5,10 +5,10 @@ import time
 from donkeycar.parts import pins
 from donkeycar.parts.actuator import PulseController
 
-STOP_PWM = 370  # Wartość STOP zapisana w config.py.
-JAZDA_PWM = 390  # Małe odchylenie od STOP; kierunek i próg ruszania do sprawdzenia.
+STOP_PWM = 370  # Zatrzymanie potwierdzone na samochodzie.
+JAZDA_PWM = 400  # Wartość jazdy wybrana podczas próby na samochodzie.
 
-# Kanał 0 poruszał serwem, więc napęd sprawdzamy na kanale 1.
+# W sprawdzonym połączeniu silnik jest na kanale 1.
 silnik = PulseController(pins.pwm_pin_by_id("PCA9685.1:40.1"))
 
 try:

@@ -5,8 +5,8 @@ import time
 from donkeycar.parts import pins
 from donkeycar.parts.actuator import PulseController
 
-SRODEK_PWM = 375  # Przybliżony środek według granic skrętu w config.py.
-SKRET_PWM = 400  # Niewielkie wychylenie; kierunek do sprawdzenia.
+SRODEK_PWM = 410  # Środek serwa ustalony na samochodzie.
+SKRET_PWM = 400  # Niewielkie wychylenie względem środka 410.
 
 # Podczas poprzedniej próby kanał 0 poruszał serwem.
 serwo = PulseController(pins.pwm_pin_by_id("PCA9685.1:40.0"))
