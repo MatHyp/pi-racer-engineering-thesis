@@ -20,6 +20,8 @@ BRAK_W_STOP_S = 0.7  # SSH nie przekazuje puszczenia klawisza.
 def steruj(ekran):
     ekran.keypad(True)  # Odczyt strzałek bez naciskania Enter.
     ekran.timeout(50)  # Sprawdzaj czas także wtedy, gdy nie ma nowych klawiszy.
+    if hasattr(curses, "set_escdelay"):
+        curses.set_escdelay(50)  # Krótki czas oczekiwania na sekwencje strzałek.
     ekran.clear()
     ekran.addstr(0, 0, f"Strzałki lewo/prawo: skręt o {KROK} jednostek.")
     ekran.addstr(1, 0, f"Zakres: {MIN_PWM}–{MAX_PWM}. Środek: {SRODEK_PWM}.")
