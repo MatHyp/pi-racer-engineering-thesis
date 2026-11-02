@@ -1,0 +1,11 @@
+{
+  "steering_pin": "PCA9685.1:40.0",
+  "motor_pin": "PCA9685.1:40.1",
+  "min_pwm": 300,
+  "max_pwm": 490,
+  "center_pwm": 410,
+  "step_pwm": 20,
+  "left_direction": 1,
+  "stop_pwm": 370,
+  "drive_pwm": 394
+}
