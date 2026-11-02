@@ -1,8 +1,11 @@
 """Etap B1: kamera CSI/Picamera2, RGB i klatki zapisane w images/<sesja>/.
 
+Obraz jest domyślnie obracany o 180 stopni, zgodnie z montażem kamery w aucie.
+
 python camera.py                     # test przez 10 sekund
 python camera.py --seconds 30        # test przez 30 sekund
 python camera.py --seconds 0         # do Ctrl+C
+python camera.py --rotation 0        # bez obrotu, jeśli zmienisz montaż kamery
 
 Wymaga Picamera2 na Raspberry Pi OS: sudo apt install python3-picamera2
 Dokumentacja: https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
@@ -37,16 +40,19 @@ class Frame:
 class Camera:
     """Jedyny właściciel kamery; read() zwraca obraz i metadane tej samej klatki."""
 
-    def __init__(self, width=640, height=480, fps=10.0, warmup_seconds=2.0):
+    def __init__(self, width=640, height=480, fps=10.0, warmup_seconds=2.0, rotation=180):
         if type(width) is not int or type(height) is not int or min(width, height) <= 0:
             raise ValueError('Szerokość i wysokość muszą być dodatnimi liczbami całkowitymi.')
         if not math.isfinite(fps) or fps <= 0:
             raise ValueError('FPS musi być dodatnią, skończoną liczbą.')
         if not math.isfinite(warmup_seconds) or warmup_seconds < 0:
             raise ValueError('Czas rozgrzewania nie może być ujemny.')
+        if type(rotation) is not int or rotation not in (0, 180):
+            raise ValueError('Obrót musi wynosić 0 albo 180 stopni.')
         self.width, self.height = width, height
         self.fps = fps
         self.warmup_seconds = warmup_seconds
+        self.rotation = rotation
         self._camera = None
         self._started = False
         self._frame_id = 0
@@ -94,6 +100,9 @@ class Camera:
             image_rgb = request.make_image('main').copy()
             if image_rgb.mode != 'RGB':
                 image_rgb = image_rgb.convert('RGB')
+            if self.rotation:
+                # Obrót w read() obowiązuje także przyszły rejestrator i autonomię.
+                image_rgb = image_rgb.rotate(self.rotation)
             self._frame_id += 1
             self._last_timestamp_ns = int(timestamp_ns)
             return Frame(self._frame_id, self._last_timestamp_ns, image_rgb)
@@ -129,6 +138,7 @@ def record_frames(camera, output=IMAGES_PATH, seconds=10.0):
         'width': camera.width, 'height': camera.height,
         'fps_requested': camera.fps,
         'picamera2_format': 'BGR888', 'image_color_order': 'RGB',
+        'rotation_degrees': camera.rotation,
         'timestamp_source': 'SensorTimestamp', 'timestamp_clock': 'CLOCK_BOOTTIME',
         'timestamp_unit': 'ns', 'jpeg_quality': 90,
         'seconds_requested': seconds,
@@ -171,13 +181,15 @@ def main():
     parser.add_argument('--fps', type=float, default=10.0, help='Żądana liczba klatek/s; domyślnie 10.')
     parser.add_argument('--width', type=int, default=640)
     parser.add_argument('--height', type=int, default=480)
+    parser.add_argument('--rotation', type=int, choices=(0, 180), default=180,
+                        help='Obrót obrazu; domyślnie 180 stopni zgodnie z montażem kamery.')
     args = parser.parse_args()
     if not math.isfinite(args.seconds) or args.seconds < 0:
         parser.error('--seconds musi być nieujemną, skończoną liczbą.')
     for sig in (signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, _stop)
     try:
-        with Camera(args.width, args.height, args.fps) as camera:
+        with Camera(args.width, args.height, args.fps, rotation=args.rotation) as camera:
             record_frames(camera, args.output, args.seconds)
     except KeyboardInterrupt:
         print('\nZakończono test kamery.')
